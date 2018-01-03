@@ -1,0 +1,108 @@
+version: '2'
+
+services:
+  ### Beanstalkd Container ####################################
+  beanstalkd:
+    image: jonbaldie/beanstalkd
+    container_name: btd.allwissend.dev
+    ports:
+      - "11300:11300"
+    networks:
+      - backend
+
+  ### Redis Container #########################################
+  redis:
+    image: redis:alpine
+    container_name: redis.allwissend.dev
+    volumes:
+      - ./redis-data:/data
+    networks:
+      - backend
+
+
+  ### MySQL Container #########################################
+  mysql:
+    image: mysql:latest
+    container_name: mysql.allwissend.dev
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_USER: root
+      MYSQL_DATABASE: core
+    networks:
+      - backend
+
+  ### MongoDB Container #######################################
+  mongo:
+    image: mongo:latest
+    container_name: mongo.allwissend.dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo-data:/data/db
+    networks:
+      - backend
+
+  
+
+  ### Elasticsearch ##########################################
+  # elasticsearch:
+  #   image: elasticsearch:alpine
+  #   container_name: elasticsearch
+  #   volumes:
+  #     - elasticsearch-data:/data
+  #     - ./docker/elasticsearch/logging.yml:/usr/share/elasticsearch/config/logging.yml
+  #     - ./docker/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+
+
+
+  # The Application
+  php_core_command:
+    # image: php:7.1-apache
+    container_name: ccore.allwissend.dev
+    build:
+      context: ./php7
+      dockerfile: Dockerfile
+    ports:
+      - "8081:80"
+      - "4301:443"
+    volumes:
+      - ./src/core:/var/www/html
+      - ./logs/core:/var/log/apache2
+    networks:
+      - frontend
+      - backend
+
+  php_core_query:
+    # image: php:7.1-apache
+    container_name: qcore.allwissend.dev
+    build:
+      context: ./php7
+      dockerfile: Dockerfile
+    ports:
+      - "8082:80"
+      - "4302:443"
+    volumes:
+      - ./src/core:/var/www/html
+      - ./logs/core:/var/log/apache2
+    networks:
+      - frontend
+      - backend
+
+
+
+### Networks Setup ############################################
+networks:
+  frontend:
+    driver: "bridge"
+  backend:
+    driver: "bridge"
+
+volumes:
+  redis-data:
+    driver: "local"
+  mysql-data:
+    driver: "local"
+  # elasticsearch-data:
+  #   driver: "local"
