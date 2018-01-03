@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class MyserverlumencodegenGenerator extends AbstractPhpCodegen
+public class AwLumenCodeGenerator extends AbstractPhpCodegen
 {
      @SuppressWarnings("hiding")
     protected String apiVersion = "1.0.0";
@@ -34,7 +34,7 @@ public class MyserverlumencodegenGenerator extends AbstractPhpCodegen
      * @return the friendly name for the generator
      */
     public String getName() {
-        return "myLumen";
+        return "aw-lumen";
     }
 
     /**
@@ -47,10 +47,10 @@ public class MyserverlumencodegenGenerator extends AbstractPhpCodegen
         return "Generates a LumenServerCodegen server library.";
     }
 
-    public MyserverlumencodegenGenerator() {
+    public AwLumenCodeGenerator() {
         super();
 
-        embeddedTemplateDir = templateDir = "lumen";
+        embeddedTemplateDir = templateDir = "AwLumenCodeGenerator";
 
         /*
          * packPath
@@ -73,6 +73,12 @@ public class MyserverlumencodegenGenerator extends AbstractPhpCodegen
         apiTestTemplateFiles.clear();
         apiDocTemplateFiles.clear();
         modelDocTemplateFiles.clear();
+
+        modelTemplateFiles.put("model.mustache", ".php");
+        apiTemplateFiles.put("api.mustache", ".php");
+        apiTestTemplateFiles.put("api_test.mustache", ".php");
+        modelDocTemplateFiles.put("model_doc.mustache", ".md");
+        apiDocTemplateFiles.put("api_doc.mustache", ".md");
 
         /*
          * Additional Properties.  These values can be passed to the templates and
