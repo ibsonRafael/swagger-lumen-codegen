@@ -12,10 +12,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AwLumenCodeGenerator extends AbstractPhpCodegen
 {
+    static Logger LOGGER = LoggerFactory.getLogger(AbstractPhpCodegen.class);
+
      @SuppressWarnings("hiding")
-    protected String apiVersion = "1.0.0";
+    protected String apiVersion = "1.0.1";
 
     /**
      * Configures the type of generator.
@@ -66,18 +71,23 @@ public class AwLumenCodeGenerator extends AbstractPhpCodegen
         /*
          * Model Package.  Optional, if needed, this can be used in templates
          */
-        modelPackage = "models";
+        modelPackage = "app.Models";
 
         // template files want to be ignored
         modelTemplateFiles.clear();
+        modelDocTemplateFiles.clear();
         apiTestTemplateFiles.clear();
         apiDocTemplateFiles.clear();
-        modelDocTemplateFiles.clear();
 
+
+        // Adding model templates
         modelTemplateFiles.put("model.mustache", ".php");
+        modelTestTemplateFiles.put("model_test.mustache", ".php");
+        modelDocTemplateFiles.put("model_doc.mustache", ".md");
+
+        // Adding api templates
         apiTemplateFiles.put("api.mustache", ".php");
         apiTestTemplateFiles.put("api_test.mustache", ".php");
-        modelDocTemplateFiles.put("model_doc.mustache", ".md");
         apiDocTemplateFiles.put("api_doc.mustache", ".md");
 
         /*
@@ -103,6 +113,11 @@ public class AwLumenCodeGenerator extends AbstractPhpCodegen
         supportingFiles.add(new SupportingFile("Controller.php", packagePath + File.separator + srcBasePath + File.separator + "app"  + File.separator + "Http" + File.separator + "Controllers" + File.separator, "Controller.php"));
         supportingFiles.add(new SupportingFile("Authenticate.php", packagePath + File.separator + srcBasePath + File.separator + "app"  + File.separator + "Http" + File.separator + "Middleware" + File.separator, "Authenticate.php"));
 
+        // Docker
+        supportingFiles.add(new SupportingFile("docker-compose.mustache", packagePath, "docker-compose.yml"));
+        supportingFiles.add(new SupportingFile("Dockerfile.php7", packagePath, "Dockerfile.php7"));
+
+
     }
 
     // override with any special post-processing
@@ -112,15 +127,28 @@ public class AwLumenCodeGenerator extends AbstractPhpCodegen
         Map<String, Object> objectMap = (Map<String, Object>) objs.get("operations");
         @SuppressWarnings("unchecked")
         List<CodegenOperation> operations = (List<CodegenOperation>) objectMap.get("operation");
+        @SuppressWarnings("unchecked")
+        String opTipo = "Command";
 
         for (CodegenOperation op : operations) {
             op.httpMethod = op.httpMethod.toLowerCase();
-            // check to see if the path contains ".", which is not supported by Lumen
-            // ref: https://github.com/swagger-api/swagger-codegen/issues/6897
-            if (op.path != null && op.path.contains(".")) {
-                throw new IllegalArgumentException("'.' (dot) is not supported by PHP Lumen. Please refer to https://github.com/swagger-api/swagger-codegen/issues/6897 for more info.");
+
+            if (op.httpMethod != null && (Objects.equals("get",op.httpMethod) || Objects.equals("head", op.httpMethod) || Objects.equals("options", op.httpMethod))) {
+              opTipo = "Query";
             }
+            // LOGGER.warn("Check if " + op.httpMethod + " is command or query:" + opTipo);
         }
+
+        // for (CodegenOperation op : operations) {
+        //     op.httpMethod = op.httpMethod.toLowerCase();
+        //     LOGGER.warn("Check if " + op.httpMethod + " contains '.' (dots)");
+        //
+        //     // check to see if the path contains ".", which is not supported by Lumen
+        //     // ref: https://github.com/swagger-api/swagger-codegen/issues/6897
+        //     if (op.path != null && op.path.contains(".")) {
+        //         throw new IllegalArgumentException("'.' (dot) is not supported by PHP Lumen. Please refer to https://github.com/swagger-api/swagger-codegen/issues/6897 for more info.");
+        //     }
+        // }
 
         // sort the endpoints in ascending to avoid the route priority issure.
         // https://github.com/swagger-api/swagger-codegen/issues/2643
