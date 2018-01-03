@@ -4,7 +4,7 @@ services:
   ### Beanstalkd Container ####################################
   beanstalkd:
     image: jonbaldie/beanstalkd
-    container_name: btd.allwissend.dev
+    container_name: beanstalkd.{{{appName}}}.dev
     ports:
       - "11300:11300"
     networks:
@@ -15,7 +15,7 @@ services:
     image: redis:alpine
     container_name: redis.allwissend.dev
     volumes:
-      - ./redis-data:/data
+      - ./containers/redis-data:/data
     networks:
       - backend
 
@@ -23,9 +23,9 @@ services:
   ### MySQL Container #########################################
   mysql:
     image: mysql:latest
-    container_name: mysql.allwissend.dev
+    container_name: mysql.{{{appName}}}.dev
     volumes:
-      - ./mysql-data:/var/lib/mysql
+      - ./containers/mysql-data:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_USER: root
@@ -36,56 +36,43 @@ services:
   ### MongoDB Container #######################################
   mongo:
     image: mongo:latest
-    container_name: mongo.allwissend.dev
+    container_name: mongo.{{{appName}}}.dev
     ports:
       - "27017:27017"
     volumes:
-      - ./mongo-data:/data/db
+      - ./containers/mongo-data:/data/db
     networks:
       - backend
-
-  
-
-  ### Elasticsearch ##########################################
-  # elasticsearch:
-  #   image: elasticsearch:alpine
-  #   container_name: elasticsearch
-  #   volumes:
-  #     - elasticsearch-data:/data
-  #     - ./docker/elasticsearch/logging.yml:/usr/share/elasticsearch/config/logging.yml
-  #     - ./docker/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-
 
 
   # The Application
-  php_core_command:
+  php:
     # image: php:7.1-apache
-    container_name: ccore.allwissend.dev
+    container_name: web.{{{appName}}}.dev
     build:
-      context: ./php7
-      dockerfile: Dockerfile
-    ports:
-      - "8081:80"
-      - "4301:443"
-    volumes:
-      - ./src/core:/var/www/html
-      - ./logs/core:/var/log/apache2
-    networks:
-      - frontend
-      - backend
-
-  php_core_query:
-    # image: php:7.1-apache
-    container_name: qcore.allwissend.dev
-    build:
-      context: ./php7
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.php7
     ports:
       - "8082:80"
       - "4302:443"
     volumes:
-      - ./src/core:/var/www/html
-      - ./logs/core:/var/log/apache2
+      - ./src:/var/www/html
+      - ./containers/apache/logs:/var/log/apache2
+    networks:
+      - frontend
+      - backend
+
+  php_frontend:
+    # image: php:7.1-apache
+    container_name: app.{{{appName}}}.dev
+    build:
+      context: ./php7
+      dockerfile: Dockerfile.php7
+    ports:
+      - "8083:80"
+      - "4303:443"
+    volumes:
+      - ./src/frontend:/var/www/html
+      - ./containers/logs/frontend:/var/log/apache2
     networks:
       - frontend
       - backend
@@ -104,5 +91,5 @@ volumes:
     driver: "local"
   mysql-data:
     driver: "local"
-  # elasticsearch-data:
-  #   driver: "local"
+  mongo-data:
+    driver: "local"
